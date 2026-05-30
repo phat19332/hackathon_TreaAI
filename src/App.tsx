@@ -86,7 +86,7 @@ function App() {
     },
   ])
 
-  const [demoSceneIdx, setDemoSceneIdx] = useState(0)
+  const demoSceneIdxRef = useRef<number>(0)
   const [objective, setObjective] = useState('Investigate the damaged cyborg')
   const [videoSrc, setVideoSrc] = useState('/video/video_intro.mp4')
   const [intel, setIntel] = useState<string[]>([
@@ -195,34 +195,32 @@ function App() {
       if (DEMO_MODE) {
         if (loadingTimerRef.current) window.clearTimeout(loadingTimerRef.current)
         loadingTimerRef.current = window.setTimeout(() => {
-          setDemoSceneIdx((prevIdx) => {
-            const currentScene = DEMO_SCENES[prevIdx]
-            const nextIdx = Math.min(prevIdx + 1, DEMO_SCENES.length - 1)
-            const nextScene = DEMO_SCENES[nextIdx]
+          const prevIdx = demoSceneIdxRef.current
+          const currentScene = DEMO_SCENES[prevIdx]
+          const nextIdx = Math.min(prevIdx + 1, DEMO_SCENES.length - 1)
+          const nextScene = DEMO_SCENES[nextIdx]
+          demoSceneIdxRef.current = nextIdx
 
-            setChatLogs((prev) => {
-              const withoutPending = prev.filter((m) => m.id !== pendingId)
-              return [
-                ...withoutPending,
-                { id: `${logId}-ai-${withoutPending.length + 1}`, role: 'ai_success', text: currentScene.aiMessage },
-                { id: `${logId}-sys-${withoutPending.length + 2}`, role: 'system', text: currentScene.sysMessage },
-              ]
-            })
-
-            setObjective(nextScene.objective)
-            setVideoSrc(nextScene.videoSrc)
-            setIntel([...nextScene.intel])
-
-            if (currentScene.newClue) {
-              const newClue = currentScene.newClue
-              setClues((prev) => {
-                if (prev.some((c) => c.id === newClue.id)) return prev
-                return [...prev, { id: newClue.id, name: newClue.name }]
-              })
-            }
-
-            return nextIdx
+          setChatLogs((prev) => {
+            const withoutPending = prev.filter((m) => m.id !== pendingId)
+            return [
+              ...withoutPending,
+              { id: `${logId}-ai-${withoutPending.length + 1}`, role: 'ai_success', text: currentScene.aiMessage },
+              { id: `${logId}-sys-${withoutPending.length + 2}`, role: 'system', text: currentScene.sysMessage },
+            ]
           })
+
+          setObjective(nextScene.objective)
+          setVideoSrc(nextScene.videoSrc)
+          setIntel([...nextScene.intel])
+
+          if (currentScene.newClue) {
+            const newClue = currentScene.newClue
+            setClues((prev) => {
+              if (prev.some((c) => c.id === newClue.id)) return prev
+              return [...prev, { id: newClue.id, name: newClue.name }]
+            })
+          }
 
           setLoading(false)
           setBusy(false)
